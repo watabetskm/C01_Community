@@ -1,13 +1,13 @@
- ## 📘 第00章：入力値検査とデータの無害化（IDS）
-概要
+ # 📘 第00章：入力値検査とデータの無害化（IDS）
+## 概要
 外部から受け取るデータはすべて「信頼できないもの」として扱い、入力値検査（バリデーション）や無害化（サニタイズ）を徹底することで、SQLインジェクションやクロスサイトスクリプティング、ZIP スリップなどの脆弱性を防ぎます。(JP-CERT)
 
-Rule ID:IDS00-J: 信頼境界を越えて渡される信頼できないデータは無害化する
+## Rule ID:IDS00-J: 信頼境界を越えて渡される信頼できないデータは無害化する
 •	解説
 ユーザ入力や外部システムから渡されるデータを、そのまま処理に利用すると、SQLインジェクションやコマンドインジェクションなどに悪用される恐れがあります。特にデータベースやシェルコマンドに渡す前には、必ず無害化（エスケープ処理やパラメタバインディング）を行うことが必須です。
 
-•	❌ 悪い例（脆弱・SQLインジェクション）
-// ユーザ入力を直接 SQL 文に組み込んでいるため、' OR '1'='1 のような入力で全件取得される恐れがある
+### •	❌ 悪い例（脆弱・SQLインジェクション）
+	// ユーザ入力を直接 SQL 文に組み込んでいるため、' OR '1'='1 のような入力で全件取得される恐れがある
 	public List<User> findUsers(String username) throws SQLException {
 	    Statement stmt = connection.createStatement();
 	    String sql = "SELECT * FROM users WHERE username = '" + username + "'";
@@ -15,7 +15,7 @@ Rule ID:IDS00-J: 信頼境界を越えて渡される信頼できないデータ
 	    // 結果を加工して return ・・・
 	}
 
-•	✅ 良い例（安全・PreparedStatement）
+### •	✅ 良い例（安全・PreparedStatement）
 	public List<User> findUsers(String username) throws SQLException {
 	    String sql = "SELECT * FROM users WHERE username = ?";
 	    try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -25,19 +25,19 @@ Rule ID:IDS00-J: 信頼境界を越えて渡される信頼できないデータ
 	        }
 	    }
 	}
-o	PreparedStatement を使うことで、内部的にパラメータを自動でエスケープするため、SQLインジェクションを防ぎます。
+*	PreparedStatement を使うことで、内部的にパラメータを自動でエスケープするため、SQLインジェクションを防ぎます。
  
-Rule ID:IDS01-J: 文字列は検査する前に標準化（正規化）する
+## Rule ID:IDS01-J: 文字列は検査する前に標準化（正規化）する
 •	解説
 Unicode などでは、同じ見た目でも異なるコードポイント列（ノーマライズ前）として表現されることがあります。たとえば é は \u00E9 のほかに e + \u0301 としても表されるため、そのままバリデーションすると想定外の振る舞いを招きます。検証前に一度正規化（NFC など）を行い、文字列を統一した上でチェックすることが推奨されます。
 
-•	❌ 悪い例
-// 入力された文字列をそのまま長さチェック
+### •	❌ 悪い例
+	// 入力された文字列をそのまま長さチェック
 	public boolean isValidUsername(String input) {
 	    return input.length() >= 3 && input.length() <= 20;
 	}
 
-•	✅ 良い例
+### •	✅ 良い例
 	import java.text.Normalizer;
 	import java.text.Normalizer.Form;
 	
@@ -50,14 +50,14 @@ Unicode などでは、同じ見た目でも異なるコードポイント列（
 	    // アルファベット・数字・一部記号のみ許可（例）
 	    return normalized.matches("^[a-zA-Z0-9_\\-]+$");
 	}
-o	Normalizer.normalize(..., Form.NFC) で正規化し、同一表現を統一してから長さやパターンを検査します。
+*	Normalizer.normalize(..., Form.NFC) で正規化し、同一表現を統一してから長さやパターンを検査します。
  
-Rule ID:IDS02-J: パス名は検証する前に正規化する
+## Rule ID:IDS02-J: パス名は検証する前に正規化する
 •	解説
 ファイルパスやディレクトリパスにおいて、../ を多用することで意図しないファイルにアクセスされる「パストラバーサル攻撃」が発生します。攻撃を防ぐには、ファイル操作前にパスを Path.normalize() などで正規化し、その結果が想定範囲内（例：特定ディレクトリ配下）であるかを必ずチェックします。
 
-•	❌ 悪い例
-// 外部入力をそのままファイル名として使用し、任意のファイルにアクセスされる恐れがある
+### •	❌ 悪い例
+	// 外部入力をそのままファイル名として使用し、任意のファイルにアクセスされる恐れがある
 	public String readFile(String filename) throws IOException {
 	    File file = new File("/data/upload/" + filename);
 	    try (BufferedReader br = new BufferedReader(new FileReader(file))) {
@@ -65,7 +65,7 @@ Rule ID:IDS02-J: パス名は検証する前に正規化する
 	    }
 	}
 
-•	✅ 良い例
+### •	✅ 良い例
 	import java.nio.file.Files;
 	import java.nio.file.Path;
 	import java.nio.file.Paths;
@@ -80,22 +80,22 @@ Rule ID:IDS02-J: パス名は検証する前に正規化する
 	    return Files.readString(target);
 	}
 
-o	Paths.get(...).toRealPath().normalize() でベースディレクトリを正規化し、resolve(...).normalize() で結合後に再度正規化。
-o	startsWith(baseDir) によって、脱出（../）が防止できます。
+*	Paths.get(...).toRealPath().normalize() でベースディレクトリを正規化し、resolve(...).normalize() で結合後に再度正規化。
+*	startsWith(baseDir) によって、脱出（../）が防止できます。
 
 
-Rule ID:IDS03-J: ユーザ入力を無害化せずにログに保存しない
+## Rule ID:IDS03-J: ユーザ入力を無害化せずにログに保存しない
 •	解説
 ログファイルにユーザ入力をそのまま出力すると、後からログ閲覧を行う運用者や管理者がマルウェア（攻撃コード含む）を踏むリスクがあります。特に可視化ツールやログ解析ツールが HTML などをレンダリングした際に「クロスサイトスクリプティング」が成立する可能性もあるため、ログ出力前に厳格に無害化（＝エスケープ）してから出力します。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	// 例: ユーザ名に <script> を含められた場合、
 	// Web ベースのログビューアで実行される恐れがある
 	public void logLogin(String username) {
 	    logger.info("User logged in: " + username);
 	}
 
-•	✅ 良い例
+### •	✅ 良い例
 	import org.apache.commons.text.StringEscapeUtils;
 	
 	public void logLogin(String username) {
@@ -103,16 +103,15 @@ Rule ID:IDS03-J: ユーザ入力を無害化せずにログに保存しない
 	    String safeUser = StringEscapeUtils.escapeJava(username);
 	    logger.info("User logged in: " + safeUser);
 	}
-o	Apache Commons Text の StringEscapeUtils.escapeJava(...) などを活用し、制御文字や特殊文字を安全にエスケープすることで、ログファイル上の意図しないコード実行を防ぎます。
+*	Apache Commons Text の StringEscapeUtils.escapeJava(...) などを活用し、制御文字や特殊文字を安全にエスケープすることで、ログファイル上の意図しないコード実行を防ぎます。
 
 
-Rule ID:IDS04-J: ZipInputStream に渡すファイルサイズは制限し、Zipスリップ攻撃を防ぐ
+## Rule ID:IDS04-J: ZipInputStream に渡すファイルサイズは制限し、Zipスリップ攻撃を防ぐ
 •	解説
 ZIP ファイルを展開する際、アーカイブ内のエントリ名に ../../etc/passwd のように記載されると、サーバ側の任意の場所を書き換えられる「ZIPスリップ」攻撃が発生します。これを防ぐには、解凍前にエントリ名を正規化して展開先ディレクトリから逸脱しないかチェックするとともに、全体のファイルサイズに上限を設けます。
 
-•	❌ 悪い例
-•
-public void unzip(File zipFile, File destDir) throws IOException {
+### •	❌ 悪い例
+	public void unzip(File zipFile, File destDir) throws IOException {
 	    try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile))) {
 	        ZipEntry entry;
 	        while ((entry = zis.getNextEntry()) != null) {
@@ -128,7 +127,7 @@ public void unzip(File zipFile, File destDir) throws IOException {
 	    }
 	}
 
-•	✅ 良い例
+### •	✅ 良い例
 	import java.nio.file.Files;
 	import java.nio.file.Path;
 	import java.nio.file.Paths;
@@ -166,35 +165,35 @@ public void unzip(File zipFile, File destDir) throws IOException {
 	        }
 	    }
 	}
-o	.toRealPath().normalize() で実際のパスを確保し、resolve(...).normalize() との比較で脱出を検出。
-o	合計展開サイズに制限をかけることで、Zip Bomb 攻撃にも対策。
+*	.toRealPath().normalize() で実際のパスを確保し、resolve(...).normalize() との比較で脱出を検出。
+*	合計展開サイズに制限をかけることで、Zip Bomb 攻撃にも対策。
  
-Rule ID:IDS05-J: コマンドライン引数や Runtime.exec()／ProcessBuilder に渡す信頼できないデータは無害化する
+## Rule ID:IDS05-J: コマンドライン引数や Runtime.exec()／ProcessBuilder に渡す信頼できないデータは無害化する
 •	解説
 コマンドインジェクションを防ぐため、シェルコマンドを直接文字列結合で生成せず、ProcessBuilderや Runtime.exec(String[]) を用いるか、外部プログラムへの引数に渡す前にエスケープを行う必要があります。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	// 入力次第で「; rm -rf /」のようなコマンド実行を許してしまう
 	public void listDirectory(String dir) throws IOException {
 	    String command = "ls " + dir;
 	    Runtime.getRuntime().exec(command);
 	}
 
-•	✅ 良い例
+### •	✅ 良い例
 	public void listDirectory(String dir) throws IOException {
 	    // 配列形式で渡すことでエスケープが自動化され、シェルインジェクションを防ぐ
 	    ProcessBuilder pb = new ProcessBuilder("ls", dir);
 	    pb.start();
 	}
-o	new ProcessBuilder("ls", dir) のように引数を分離すると、シェル展開を経ず引数として直接渡されるため、インジェクションのリスクが大幅に低減します。
+*	new ProcessBuilder("ls", dir) のように引数を分離すると、シェル展開を経ず引数として直接渡されるため、インジェクションのリスクが大幅に低減します。
 ※Windows 環境では "cmd.exe", "/c", "dir", dir のように配列形式で指定します。
 
 
-Rule ID:IDS06-J: 無害化されていないユーザ入力をフォーマット文字列に含めない
+## Rule ID:IDS06-J: 無害化されていないユーザ入力をフォーマット文字列に含めない
 •	解説
 String.format() や MessageFormat、printf 系メソッドを使う際、ユーザ入力をそのままフォーマットパラメータとして渡すと、予期しない置換や例外、情報漏えいを引き起こす可能性があります。フォーマット文字列は固定し、ユーザ入力はパラメータとして渡すか、あらかじめエスケープしてください。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	public void logMessage(String userMsg) {
 	    // フォーマット文字列自体をユーザ入力から生成しているため、
 	    // "%x %x %x" のような入力で混乱を招き、例外が発生する
@@ -202,25 +201,25 @@ String.format() や MessageFormat、printf 系メソッドを使う際、ユー�
 	    System.out.printf(format);
 	}
 
-•	✅ 良い例
+### •	✅ 良い例
 	public void logMessage(String userMsg) {
 	    // フォーマット文字列は固定し、ユーザ入力は引数として渡す
 	    System.out.printf("User says: %s%n", userMsg);
 	}
-o	フォーマット文字列を固定することで、% 系の特殊文字を悪用されるリスクを抑えられます。
+*	フォーマット文字列を固定することで、% 系の特殊文字を悪用されるリスクを抑えられます。
 
 
-Rule ID:IDS07-J: XML にデータを埋め込むときは適切にエスケープし、XXE（XML External Entity）を防止する
+## Rule ID:IDS07-J: XML にデータを埋め込むときは適切にエスケープし、XXE（XML External Entity）を防止する
 •	解説
 XML をパースするときに外部エンティティを許可していると、攻撃者が悪意ある DTD を挿入し、サーバ上のファイルを読み込ませる XXE 攻撃につながります。また、ユーザ入力をそのまま XML に埋め込むと、XML インジェクションを引き起こす恐れがあります。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	// デフォルト設定のまま XML を読み込むと XXE 攻撃が可能
 	DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 	DocumentBuilder builder = factory.newDocumentBuilder();
 	Document doc = builder.parse(new File("user_input.xml"));
 
-•	✅ 良い例
+### •	✅ 良い例
 	import javax.xml.parsers.DocumentBuilder;
 	import javax.xml.parsers.DocumentBuilderFactory;
 	
