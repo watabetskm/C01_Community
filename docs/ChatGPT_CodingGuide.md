@@ -239,15 +239,15 @@ XML をパースするときに外部エンティティを許可していると�
 o	各種 setFeature(...) で外部エンティティや DTD の使用を明示的に禁止し、XXE を防止しています。
 
 
-📗 第01章：宣言と初期化（DCL）
-概要
+# 📗 第01章：宣言と初期化（DCL）
+## 概要
 クラスや変数の宣言・初期化タイミングに関するルールを定め、静的初期化の循環参照や不適切なデフォルト値などを防ぐことで、実行時の予期せぬ挙動や脆弱性の発生を抑制します。(JP-CERT)
 
-Rule ID:DCL00-J: クラスの静的初期化子で循環参照を発生させない
+## Rule ID:DCL00-J: クラスの静的初期化子で循環参照を発生させない
 •	解説
 Java の静的初期化子（static { ... }）や静的フィールド内で相互にインスタンスを生成すると、初期化順序の予測が困難になり、NullPointerException や StackOverflowError の原因となります。初期化の順序を明確にするか、循環参照を断ち切る設計にしましょう。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	public class A {
 	    // B のインスタンス生成時に B が A のインスタンスを生成しようとして循環する
 	    static B b = new B();
@@ -257,7 +257,7 @@ Java の静的初期化子（static { ... }）や静的フィールド内で相�
 	    static A a = new A();
 	}
 
-•	✅ 良い例
+### •	✅ 良い例
 	public class A {
 	    static B b;
 	    static {
@@ -271,13 +271,15 @@ Java の静的初期化子（static { ... }）や静的フィールド内で相�
 	        a = new A(); // B の初期化ブロック内で A を生成
 	    }
 	}
-o	初期化ブロックを使うことで、サイクルが生じにくい構造に。ただし、依存関係自体を見直し、そもそも相互に初期化しない設計が望ましい。
+
+* 初期化ブロックを使うことで、サイクルが生じにくい構造に。ただし、依存関係自体を見直し、そもそも相互に初期化しない設計が望ましい。
+
  
-DCL01-J: final フィールドは常に明示的に初期化する
+## DCL01-J: final フィールドは常に明示的に初期化する
 •	解説
 final フィールドをデフォルト値に頼って曖昧に初期化すると、後々のリファクタリング時に意図しない未初期化状態（null や 0）が残るリスクがあります。定数や final フィールドは必ず宣言時、またはコンストラクタ内で明示的に初期化してください。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	public class Config {
 	    // IDEによっては初期化が明示されず、後から意図しない変更を許してしまう
 	    public final String version;
@@ -288,7 +290,7 @@ final フィールドをデフォルト値に頼って曖昧に初期化する�
 	    }
 	}
 
-•	✅ 良い例
+### •	✅ 良い例
 	public class Config {
 	    public final String version;
 	
@@ -297,94 +299,94 @@ final フィールドをデフォルト値に頼って曖昧に初期化する�
 	        this.version = version;
 	    }
 	}
-o	final フィールドは必ず宣言時かコンストラクタ内で一度だけ初期化することで、後から書き換えられることを防ぎます。
+*	final フィールドは必ず宣言時かコンストラクタ内で一度だけ初期化することで、後から書き換えられることを防ぎます。
 
 
 
-📙 第02章：式（EXP）
+## 📙 第02章：式（EXP）
 概要
 式の評価やメソッド呼び出しに関するルールを定め、戻り値の無視や比較演算の誤り、条件式の不備などを防ぎます。(JP-CERT)
 
-Rule ID:EXP00-J: メソッドの戻り値を無視しない
+## Rule ID:EXP00-J: メソッドの戻り値を無視しない
 •	解説
 多くのメソッドは呼び出し結果を戻り値として返しますが、それを無視すると誤った動作や想定外の分岐が起こることがあります。特にコレクション操作や I/O 操作など戻り値によって正常終了・異常終了が判別できるものは、必ず戻り値をチェックしましょう。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	List<String> list = new ArrayList<>();
 	// remove メソッドの戻り値を無視している ⇒ 実際には削除されていない可能性がある
 	list.remove("target");
 
-•	✅ 良い例
+### •	✅ 良い例
 	List<String> list = new ArrayList<>();
 	boolean removed = list.remove("target");
 	if (!removed) {
 	    System.out.println("要素が削除されませんでした: target");
 	}
-o	戻り値が false の場合、要素がそもそも存在しなかった可能性があるため適切にハンドリングします。
+*	戻り値が false の場合、要素がそもそも存在しなかった可能性があるため適切にハンドリングします。
  
 
-Rule ID:EXP01-J: ビット演算／数値演算で符号拡張やキャストミスを起こさない
+## Rule ID:EXP01-J: ビット演算／数値演算で符号拡張やキャストミスを起こさない
 •	解説
 Javaでは整数型を扱うとき、byte→int への符号拡張や、ビットシフトの優先順序によって想定しない結果を得る恐れがあります。演算前後で適切にキャストし、ビット演算子の挙動を理解しておくことが重要です。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	byte b = (byte) 0xF0; // -16
 	int i = b >> 4;       // 結果は -1（符号ビットが拡張されるため）
 
-•	✅ 良い例
+### •	✅ 良い例
 	byte b = (byte) 0xF0; // -16
 	int i = (b & 0xFF) >> 4; // 0xF0 & 0xFF = 240, 240 >> 4 = 15
-o	& 0xFF で符号拡張を抑制し、正しくビット右シフトした結果を得ています。
+*	& 0xFF で符号拡張を抑制し、正しくビット右シフトした結果を得ています。
 
 
-📒 第03章：数値型とその操作（NUM）
+## 📒 第03章：数値型とその操作（NUM）
 概要
 整数オーバーフローや浮動小数点の精度問題、キャストによる情報損失、数値比較の落とし穴などを防ぐルールを定めています。(JP-CERT)
 
-Rule ID:NUM00-J: 整数演算でオーバーフローを検出する
+## Rule ID:NUM00-J: 整数演算でオーバーフローを検出する
 •	解説
 Javaでは、int や long の加算・乗算でオーバーフローが起きても例外は発生せずただ折り返します。計算結果が予想を超える場合は、Math.addExact() や Math.multiplyExact() を使うか、あらかじめ範囲チェックを行いましょう。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	int a = Integer.MAX_VALUE;
 	int b = 1;
 	int result = a + b; // 整数オーバーフローし、result は -2147483648 になる
 
-•	✅ 良い例
+### •	✅ 良い例
 	try {
 	    int result = Math.addExact(a, b);
 	} catch (ArithmeticException e) {
 	    // オーバーフロー発生時の処理
 	}
-o	Math.addExact はオーバーフロー時に ArithmeticException をスローするため、安全に検出できます。
+*	Math.addExact はオーバーフロー時に ArithmeticException をスローするため、安全に検出できます。
 
 
-Rule ID:NUM01-J: 浮動小数点変数をループカウンタに使用しない
+## Rule ID:NUM01-J: 浮動小数点変数をループカウンタに使用しない
 •	解説
 浮動小数点（float／double）は IEEE 754 準拠で誤差を含むため、ループカウンタに使うと意図しないループ回数や無限ループを招く恐れがあります。ループには必ず整数型（int／long）を使いましょう。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	// 0.1 を足し続けると、誤差により無限ループの可能性がある
 	for (double x = 0.0; x != 1.0; x += 0.1) {
 	    // do something
 	}
 
-•	✅ 良い例
+### •	✅ 良い例
 	for (int i = 0; i < 10; i++) {
 	    double x = i * 0.1; // ループカウンタは int
 	    // do something
 	}
 
 
-📓 第04章：文字と文字列（STR）
+## 📓 第04章：文字と文字列（STR）
 概要
 文字列操作におけるバッファオーバーフローや不適切な正規表現、文字エンコーディングミスを防ぐルールを定めています。(JP-CERT)
 
-Rule ID:STR00-J: 文字列連結は StringBuilder を使い、大量連結で性能と脆弱性を防ぐ
+## Rule ID:STR00-J: 文字列連結は StringBuilder を使い、大量連結で性能と脆弱性を防ぐ
 •	解説
 String の連結（+ 演算子）は内部で毎回新しい String インスタンスを生成し、性能劣化を引き起こす場合があります。また、多数の部分文字列を連結するとヒープメモリを大量消費し、DoS（サービス拒否）につながる可能性があるため、大量の連結には StringBuilder を使いましょう。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	public String joinNames(List<String> names) {
 	    String result = "";
 	    for (String n : names) {
@@ -393,7 +395,7 @@ String の連結（+ 演算子）は内部で毎回新しい String インスタ
 	    return result;
 	}
 
-•	✅ 良い例
+### •	✅ 良い例
 	public String joinNames(List<String> names) {
 	    StringBuilder sb = new StringBuilder();
 	    for (String n : names) {
@@ -404,16 +406,16 @@ String の連結（+ 演算子）は内部で毎回新しい String インスタ
 o	StringBuilder を使うことで、中間オブジェクトの生成を抑え、メモリ消費と性能劣化を回避します。
 
 
-Rule ID:STR01-J: 正規表現を扱う際、ユーザ入力を直接パターンに含めない
+## Rule ID:STR01-J: 正規表現を扱う際、ユーザ入力を直接パターンに含めない
 •	解説
 ユーザ入力をそのまま正規表現に含めると、ReDoS（正規表現による DoS）や不正なパターンによる例外を引き起こす恐れがあります。ユーザから受け取った文字列は、あらかじめ Pattern.quote(...) などでエスケープしてからパターンを生成するか、ホワイトリスト方式で入力文字を絞り込みましょう。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	public boolean matchesPattern(String userPattern, String input) {
 	    // userPattern が "(a+)+" のような複雑なパターンだと ReDoS の恐れあり
 	    return input.matches(userPattern);
 	}
-•	✅ 良い例
+### •	✅ 良い例
 	import java.util.regex.Pattern;
 	
 	public boolean containsLiteral(String literal, String input) {
@@ -421,17 +423,17 @@ Rule ID:STR01-J: 正規表現を扱う際、ユーザ入力を直接パターン
 	    String safePattern = ".*" + Pattern.quote(literal) + ".*";
 	    return input.matches(safePattern);
 	}
-o	Pattern.quote(...) を使うことで、ユーザ入力中のメタ文字をすべてエスケープし、ReDoS や意図しないマッチングを回避します。
+*	Pattern.quote(...) を使うことで、ユーザ入力中のメタ文字をすべてエスケープし、ReDoS や意図しないマッチングを回避します。
  
-📔 第05章：オブジェクト指向（OBJ）
+## 📔 第05章：オブジェクト指向（OBJ）
 概要
 継承・ポリモーフィズム・可視性など、オブジェクト指向設計においてセキュリティに影響を与えるポイントを定めています。外部からアクセス可能なメソッドやフィールド、オーバーライドの危険性などを管理し、意図しない挙動や情報漏えいを防ぎます。(JP-CERT)
 
-Rule ID:OBJ00-J: 継承関係では、オーバーライド可能なメソッドに注意する
+## Rule ID:OBJ00-J: 継承関係では、オーバーライド可能なメソッドに注意する
 •	解説
 スーパークラスのコンストラクタ内で this.doSomething() のようにメソッドを呼び出すと、サブクラスでオーバーライドされたメソッドが実行され、初期化前の状態で動作させてしまう恐れがあります（Fragile Base Class 問題）。可能な限り、コンストラクタ内でオーバーライド可能なメソッドを呼び出さないように設計しましょう。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	public class SuperClass {
 	    public SuperClass() {
 	        // サブクラスでオーバーライドされた doLogic() が呼ばれてしまう
@@ -456,7 +458,7 @@ Rule ID:OBJ00-J: 継承関係では、オーバーライド可能なメソッド
 	    }
 	}
 
-•	✅ 良い例
+### •	✅ 良い例
 	public class SuperClass {
 	    // コンストラクタ内では final メソッドや private メソッドのみを呼び出す
 	    public SuperClass() {
@@ -486,19 +488,19 @@ Rule ID:OBJ00-J: 継承関係では、オーバーライド可能なメソッド
 	        System.out.println("Sub logic: " + value.length());
 	    }
 	}
-o	コンストラクタ内で呼び出すメソッドは private／final にし、オーバーライドされないようにします。
+*	コンストラクタ内で呼び出すメソッドは private／final にし、オーバーライドされないようにします。
 
 
-📒 第06章：メソッド（MET）
+## 📒 第06章：メソッド（MET）
 概要
 メソッド設計時の注意点をまとめた章です。リフレクションの乱用、セキュリティマネージャの設定、ファイナライザの誤用など、メソッドレベルでの落とし穴を防ぎます。(JP-CERT)
 
-Rule ID:MET00-J: セキュリティマネージャやリフレクションを不用意に使用しない
+## Rule ID:MET00-J: セキュリティマネージャやリフレクションを不用意に使用しない
 •	解説
-o	System.setSecurityManager(...) をプログラム内で呼び出すと、想定外の権限変更やポリシー違反を引き起こす可能性があります。セキュリティ設定は起動時引数（-Djava.security.manager）など外部から管理し、コード内で直接変更しないでください。
-o	リフレクションによってプライベートメソッドやフィールドにアクセスすると、クラス内の不変性が崩れ、意図しないパスワードやトークンの読み書きにつながる恐れがあります。リフレクションは最小限にとどめ、可能な限り通常のアクセサ（getter/setter）や設計パターンで代替しましょう。
+*	System.setSecurityManager(...) をプログラム内で呼び出すと、想定外の権限変更やポリシー違反を引き起こす可能性があります。セキュリティ設定は起動時引数（-Djava.security.manager）など外部から管理し、コード内で直接変更しないでください。
+*	リフレクションによってプライベートメソッドやフィールドにアクセスすると、クラス内の不変性が崩れ、意図しないパスワードやトークンの読み書きにつながる恐れがあります。リフレクションは最小限にとどめ、可能な限り通常のアクセサ（getter/setter）や設計パターンで代替しましょう。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	public void overrideSecurityManager() {
 	    // 実行時に予期しない SecurityException を引き起こす可能性
 	    System.setSecurityManager(new SecurityManager());
@@ -512,7 +514,7 @@ o	リフレクションによってプライベートメソッドやフィール
 	    System.out.println("秘密情報: " + value);
 	}
 
-•	✅ 良い例
+### •	✅ 良い例
 	// セキュリティマネージャは起動時の JVM 引数で設定し、コード内で触らない
 	// java -Djava.security.manager -Djava.security.policy=app.policy MyApp
 	
@@ -529,19 +531,19 @@ o	リフレクションによってプライベートメソッドやフィール
 	        return "***" + secret.substring(secret.length() - 4);
 	    }
 	}
-o	セキュリティマネージャは JVM の起動時設定で管理し、コード内では扱わない。
-o	リフレクションを使わず、必要に応じたアクセサを用意し、情報漏えいを防ぎます。
+*	セキュリティマネージャは JVM の起動時設定で管理し、コード内では扱わない。
+*	リフレクションを使わず、必要に応じたアクセサを用意し、情報漏えいを防ぎます。
  
 
-📔 第07章：例外時の動作（ERR）
+## 📔 第07章：例外時の動作（ERR）
 概要
 例外処理の設計ミスによる情報漏えいや不整合状態を防ぐルールをまとめた章です。適切な例外ログ出力やリソースの巻き戻し、カスタム例外の活用などをガイドします。(JP-CERT)
 
-Rule ID:ERR00-J: 例外メッセージに機密情報を含めない
+## Rule ID:ERR00-J: 例外メッセージに機密情報を含めない
 •	解説
 例外時に内部のスタックトレースや機密情報（パスワード、システムパスなど）をログに出力すると、攻撃者に情報を与えてしまいます。ユーザ向けメッセージと、運用者向けのデバッグログは分離し、ログには必要最小限の情報のみを記録してください。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	public void authenticate(String username, String password) throws AuthenticationException {
 	    try {
 	        // 認証処理
@@ -551,7 +553,7 @@ Rule ID:ERR00-J: 例外メッセージに機密情報を含めない
 	    }
 	}
 
-•	✅ 良い例
+### •	✅ 良い例
 	import org.slf4j.Logger;
 	import org.slf4j.LoggerFactory;
 	
@@ -568,14 +570,14 @@ Rule ID:ERR00-J: 例外メッセージに機密情報を含めない
 	        }
 	    }
 	}
-o	logger.error(...) で内部エラー情報を記録し、ユーザには詳細を伏せたメッセージを返します。
+*	logger.error(...) で内部エラー情報を記録し、ユーザには詳細を伏せたメッセージを返します。
  
 
-Rule ID:ERR01-J: 例外をキャッチしたら必ず処理を行い、握りつぶさない
+## Rule ID:ERR01-J: 例外をキャッチしたら必ず処理を行い、握りつぶさない
 •	解説
 catch (Exception e) { /* 何もしない */ } のように例外を無視すると、バグの原因を特定できず、意図しない動作や情報漏えいのリスクが高まります。例外が発生した場合は、必ずログ出力、さらなるリスロー、あるいは代替処理を行ってシステムを安全な状態に保ちましょう。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	public void process() {
 	    try {
 	        // 複雑な処理
@@ -585,7 +587,7 @@ catch (Exception e) { /* 何もしない */ } のように例外を無視する�
 	    // 以降の処理が継続され、予期せぬ挙動を引き起こす可能性あり
 	}
 
-•	✅ 良い例
+### •	✅ 良い例
 	public void process() {
 	    try {
 	        // 複雑な処理
@@ -596,18 +598,18 @@ catch (Exception e) { /* 何もしない */ } のように例外を無視する�
 	    }
 	    // 正常時の処理
 	}
-o	例外発生時に必ずログを出し、安全な代替処理やリスローを行って、システムの整合性を保ちます。
+*	例外発生時に必ずログを出し、安全な代替処理やリスローを行って、システムの整合性を保ちます。
 
 
-📕 第08章：可視性とアトミック性（VNA）
+## 📕 第08章：可視性とアトミック性（VNA）
 概要
 マルチスレッド環境でのフィールド可視性やアトミック性（原子性）に関するルールをまとめています。volatile、synchronized、AtomicXxx クラスなどを適切に使用し、レースコンディションやデータ不整合を防ぎます。(JP-CERT)
 
-Rule ID:VNA00-J: 共有変数へは必ず適切な同期機構を使う
+## Rule ID:VNA00-J: 共有変数へは必ず適切な同期機構を使う
 •	解説
 複数スレッドが同じ変数にアクセスする場合、volatile、synchronized、または java.util.concurrent.atomic パッケージのクラス（例：AtomicInteger）を使用して可視性とアトミック性（排他制御）を確保します。何も対策をしないと、キャッシュの同期ずれや部分的な更新により、予期しない挙動を招きます。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	public class Counter {
 	    private int count = 0;
 	    public void increment() {
@@ -619,7 +621,7 @@ Rule ID:VNA00-J: 共有変数へは必ず適切な同期機構を使う
 	}
 	// 複数スレッドから同時に increment() を呼ぶと、カウントが飛ぶ可能性がある
 
-•	✅ 良い例
+### •	✅ 良い例
 	import java.util.concurrent.atomic.AtomicInteger;
 	
 	public class Counter {
@@ -633,18 +635,19 @@ Rule ID:VNA00-J: 共有変数へは必ず適切な同期機構を使う
 	        return count.get();
 	    }
 	}
-o	AtomicInteger.incrementAndGet() を使うことで、ロックを使わずアトミック性と可視性を確保します。
+
+*	AtomicInteger.incrementAndGet() を使うことで、ロックを使わずアトミック性と可視性を確保します。
 
 
-📓 第09章：ロック（LCK）
+## 📓 第09章：ロック（LCK）
 概要
 スレッド間での排他制御（ロック）に関するルールを定め、デッドロックやパフォーマンス低下を防ぎつつ、安全に共有資源を扱います。(JP-CERT)
 
-Rule ID:LCK00-J: できる限り狭い範囲でロックを取得し、デッドロックを回避する
+## Rule ID:LCK00-J: できる限り狭い範囲でロックを取得し、デッドロックを回避する
 •	解説
 synchronized などで長時間ロックを保持すると、他スレッドの待ちが発生し、システム全体のスループットが低下します。また、異なるロックを順序を変えて取得するとデッドロックが起こります。可能な限りクリティカルセクションを狭くし、ロック取得の順序は常に統一してください。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	public class DataProcessor {
 	    private final Object lockA = new Object();
 	    private final Object lockB = new Object();
@@ -669,7 +672,7 @@ synchronized などで長時間ロックを保持すると、他スレッドの�
 	    // method1 と method2 でロック取得順序が異なるため、デッドロックの恐れあり
 	}
 
-•	✅ 良い例
+### •	✅ 良い例
 	public class DataProcessor {
 	    private final Object lockA = new Object();
 	    private final Object lockB = new Object();
@@ -693,18 +696,19 @@ synchronized などで長時間ロックを保持すると、他スレッドの�
 	        }
 	    }
 	}
-o	ロック取得順序を lockA → lockB に統一し、かつクリティカルセクションをできる限り短くしています。
+
+*	ロック取得順序を lockA → lockB に統一し、かつクリティカルセクションをできる限り短くしています。
  
 
-📘 第10章：スレッド API（THI）
+## 📘 第10章：スレッド API（THI）
 概要
 Thread クラスや Runnable 実装など、スレッド生成および操作に関するルールを定めています。スレッドの生死管理や共有変数の可視性などを含み、安全にマルチスレッド処理を設計します。(JP-CERT)
 
-Rule ID:THI00-J: Thread.stop() や Thread.suspend() を使用しない
+## Rule ID:THI00-J: Thread.stop() や Thread.suspend() を使用しない
 •	解説
 Thread.stop() や Thread.suspend() は非推奨（deprecated）であり、スレッドを強制終了／一時停止すると内部ロックが解放されず、デッドロックや整合性の破壊を招きます。スレッドを停止する必要がある場合は、フラグを使った協調的キャンセル（interrupt）を行い、安全に終了させてください。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	Thread worker = new Thread(() -> {
 	    while (true) {
 	        // 長時間処理
@@ -714,7 +718,7 @@ Thread.stop() や Thread.suspend() は非推奨（deprecated）であり、ス�
 	// 後から強制停止
 	worker.stop(); // 非推奨 ⇒ 不整合を招く恐れがある
 
-•	✅ 良い例
+### •	✅ 良い例
 	public class SafeWorker implements Runnable {
 	    private volatile boolean running = true;
 	
@@ -742,18 +746,19 @@ Thread.stop() や Thread.suspend() は非推奨（deprecated）であり、ス�
 	// 後で終了させる
 	workerTask.stop();
 	workerThread.join();
-o	volatile フラグを使ってループ中に動的に終了を指示し、スレッドを安全に停止します。
+
+*	volatile フラグを使ってループ中に動的に終了を指示し、スレッドを安全に停止します。
  
 
-📘 第11章：スレッドプール（TPS）
+## 📘 第11章：スレッドプール（TPS）
 概要
 スレッドプール（ExecutorService）の適切な利用方法を定めています。無制限のスレッド作成やシャットダウン忘れによるリソースリークを防ぎ、例外処理を考慮したタスク設計を推奨します。(JP-CERT)
 
-Rule ID:TPS00-J: ExecutorService は必ずシャットダウンし、タスク例外をログに残す
+## Rule ID:TPS00-J: ExecutorService は必ずシャットダウンし、タスク例外をログに残す
 •	解説
 Executors.newFixedThreadPool(...) などで生成したスレッドプールを使い回した後、shutdown() または shutdownNow() を呼び出さないと JVM が終了できず、リソースリークが発生します。さらに、プール内のタスクで未処理例外が発生するとスレッドが停止してしまう可能性があるため、例外発生時には必ずログを残すか、ThreadFactory で UncaughtExceptionHandler を設定してください。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	ExecutorService executor = Executors.newFixedThreadPool(10);
 	executor.submit(() -> {
 	    // 例外をキャッチせずに投げる ⇒ スレッドプール内で止まる可能性あり
@@ -761,7 +766,7 @@ Executors.newFixedThreadPool(...) などで生成したスレッドプールを�
 	});
 	// シャットダウンを呼ばないので JVM が終了しないリスク
 
-•	✅ 良い例
+### •	✅ 良い例
 	import java.util.concurrent.ExecutorService;
 	import java.util.concurrent.Executors;
 	import java.util.concurrent.TimeUnit;
@@ -811,26 +816,27 @@ Executors.newFixedThreadPool(...) などで生成したスレッドプールを�
 	        }
 	    }
 	}
-o	ThreadFactory で UncaughtExceptionHandler を設定し、未処理例外をログに残します。
-o	最後に shutdown() → awaitTermination(...) → shutdownNow() の順で必ず停止処理を行っています。
+
+*	ThreadFactory で UncaughtExceptionHandler を設定し、未処理例外をログに残します。
+*	最後に shutdown() → awaitTermination(...) → shutdownNow() の順で必ず停止処理を行っています。
  
 
-📘 第12章：スレッドの安全性に関する雑則（TSM）
+## 📘 第12章：スレッドの安全性に関する雑則（TSM）
 概要
 共有変数・イミュータブルオブジェクト・スレッドローカル変数のルールなど、マルチスレッド環境での細かい注意点を定めています。(JP-CERT)
 
-Rule ID:TSM00-J: 不変オブジェクトを活用し、共有資源の整合性を高める
+## Rule ID:TSM00-J: 不変オブジェクトを活用し、共有資源の整合性を高める
 •	解説
 可能な限りオブジェクトを「不変（immutable）」に設計すると、マルチスレッド環境での共有時にロックを不要にでき、デッドロックや可視性問題を避けられます。final フィールドのみを持ち、すべてのフィールドをコンストラクタで確実に初期化することで不変化を保証しましょう。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	public class MutablePoint {
 	    public int x;
 	    public int y;
 	}
 	// 複数スレッドから直接フィールドを書き換えられるため整合性が保たれない
 
-•	✅ 良い例
+### •	✅ 良い例
 	public final class ImmutablePoint {
 	    private final int x;
 	    private final int y;
@@ -847,25 +853,26 @@ Rule ID:TSM00-J: 不変オブジェクトを活用し、共有資源の整合性
 	        return y;
 	    }
 	}
-o	final クラスかつすべてのフィールドを final とし、セッターを持たないことで不変性を保証します。
+
+*	final クラスかつすべてのフィールドを final とし、セッターを持たないことで不変性を保証します。
 
 
-📔 第13章：入出力（FIO）
+## 📔 第13章：入出力（FIO）
 概要
 ファイル／ストリーム操作やネットワーク I/O などに関するルールを定めています。リソースリーク、パス操作、シリアライズデータの取り扱いなどを網羅し、安全な I/O 処理を実現します。(JP-CERT)
 
-Rule ID:FIO00-J: リソースは必ずクローズし、try-with-resources を活用する
+## Rule ID:FIO00-J: リソースは必ずクローズし、try-with-resources を活用する
 •	解説
 ファイルやソケット、ストリームなどは必ずクローズしないと、ファイルハンドルリークやソケットリークにつながります。Java 7 以降は try-with-resources を使って自動的にクローズさせましょう。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	public void readFile(String path) throws IOException {
 	    FileInputStream fis = new FileInputStream(path);
 	    byte[] data = fis.readAllBytes();
 	    // fis.close() を忘れている ⇒ リソースリークの恐れ
 	}
 
-•	✅ 良い例
+### •	✅ 良い例
 	public void readFile(String path) throws IOException {
 	    try (FileInputStream fis = new FileInputStream(path)) {
 	        byte[] data = fis.readAllBytes();
@@ -873,11 +880,11 @@ Rule ID:FIO00-J: リソースは必ずクローズし、try-with-resources を�
 	    }
 	}
  
-Rule ID:FIO01-J: ネットワークソケットはタイムアウトを設定し、入力検証を行う
+## Rule ID:FIO01-J: ネットワークソケットはタイムアウトを設定し、入力検証を行う
 •	解説
 ソケットを開設したまま読み込み待ち状態が続くと、DoS（サービス拒否）攻撃を受けやすくなります。接続時・読み込み時には適切なタイムアウトを設定し、ソケットから受信したデータはすべて検証・無害化してから処理します。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	public void handleClient(Socket client) throws IOException {
 	    BufferedReader br = new BufferedReader(new InputStreamReader(client.getInputStream()));
 	    String line = br.readLine(); // タイムアウトなしで待ち続ける
@@ -885,7 +892,7 @@ Rule ID:FIO01-J: ネットワークソケットはタイムアウトを設定し
 	    process(line);
 	}
 
-•	✅ 良い例
+### •	✅ 良い例
 	public void handleClient(Socket client) throws IOException {
 	    // タイムアウトを 5 秒に設定
 	    client.setSoTimeout(5000);
@@ -908,22 +915,22 @@ Rule ID:FIO01-J: ネットワークソケットはタイムアウトを設定し
 	}
 
 
-📒 第14章：シリアライズ（SER）
+## 📒 第14章：シリアライズ（SER）
 概要
 Java のシリアライズ／デシリアライズに関するルールを定めています。シリアライズデータをそのまま読み込むとリモートコード実行やオブジェクトの改ざんにつながるため、許可クラスチェックやカスタムの readObject() を必ず実装してください。(JP-CERT)
 
-Rule ID:SER00-J: デシリアライズするデータは、許可されたクラスのみをインスタンス化する
+## Rule ID:SER00-J: デシリアライズするデータは、許可されたクラスのみをインスタンス化する
 •	解説
 攻撃者が任意のクラスをデシリアライズさせることで、悪意あるオブジェクトを注入しリモートコード実行を行える場合があります。デシリアライズ時に ObjectInputStream.resolveClass() をオーバーライドし、ホワイトリスト方式で許可クラスのみを読み込むように制限します。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	public Object readData(File file) throws IOException, ClassNotFoundException {
 	    try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
 	        return ois.readObject(); // 任意のクラスを読み込まれる恐れあり
 	    }
 	}
 
-•	✅ 良い例
+### •	✅ 良い例
 	import java.io.FileInputStream;
 	import java.io.IOException;
 	import java.io.InvalidClassException;
@@ -945,18 +952,19 @@ Rule ID:SER00-J: デシリアライズするデータは、許可されたクラ
 	        return ois.readObject();
 	    }
 	}
-o	resolveClass(...) をオーバーライドして、ホワイトリストにないクラスは拒否する実装例です。
+
+*	resolveClass(...) をオーバーライドして、ホワイトリストにないクラスは拒否する実装例です。
  
 
-📘 第15章：プラットフォームのセキュリティ（SEC）
+## 📘 第15章：プラットフォームのセキュリティ（SEC）
 概要
 Java 標準ライブラリや外部ライブラリを使用する際の注意点（危険なメソッド呼び出し制限、暗号化アルゴリズムの正しい利用、ログイン管理など）をガイドします。(JP-CERT)
 
-Rule ID:SEC00-J: 非推奨の暗号アルゴリズム（MD5, SHA-1 など）を使用しない
+## Rule ID:SEC00-J: 非推奨の暗号アルゴリズム（MD5, SHA-1 など）を使用しない
 •	解説
 MD5 や SHA-1 は衝突攻撃が実用化されており、セキュリティ要件を満たせません。SHA-256 以降や、より強力なハッシュ関数（SHA3-256、PBKDF2、bcrypt、scrypt、Argon2）を利用してください。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	import java.security.MessageDigest;
 	
 	public byte[] hashPassword(String password) throws Exception {
@@ -964,7 +972,7 @@ MD5 や SHA-1 は衝突攻撃が実用化されており、セキュリティ要
 	    return md.digest(password.getBytes(StandardCharsets.UTF_8));
 	}
 
-•	✅ 良い例
+### •	✅ 良い例
 	import javax.crypto.SecretKeyFactory;
 	import javax.crypto.spec.PBEKeySpec;
 	import java.security.SecureRandom;
@@ -985,24 +993,25 @@ MD5 や SHA-1 は衝突攻撃が実用化されており、セキュリティ要
 	        return salt;
 	    }
 	}
-o	PBKDF2（反復ハッシュ）＋ HmacSHA256 を使い、十分なストレッチ回数を設定した例です。
+
+*	PBKDF2（反復ハッシュ）＋ HmacSHA256 を使い、十分なストレッチ回数を設定した例です。
 
 
-📙 第16章：実行環境（ENV）
+## 📙 第16章：実行環境（ENV）
 概要
 実行時のシステムプロパティ・環境変数の取り扱い、外部設定ファイルの読み込み時における検証など、環境依存のセキュリティリスクを排除するルールをまとめています。(JP-CERT)
 
-Rule ID:ENV00-J: 環境変数やシステムプロパティを信用せず、検証してから利用する
+## Rule ID:ENV00-J: 環境変数やシステムプロパティを信用せず、検証してから利用する
 •	解説
 環境変数やシステムプロパティはユーザが容易に変更できるため、直接機密情報として使うとリスクが高まります。値を取得した後は、ホワイトリストや正規表現で検証し、想定外の値が含まれていないかチェックしてから利用します。
 
-•	❌ 悪い例
+### •	❌ 悪い例
 	public String getConfigDir() {
 	    // user.dir が書き換えられると任意のディレクトリを参照してしまう
 	    return System.getProperty("user.dir") + "/config";
 	}
 
-•	✅ 良い例
+### •	✅ 良い例
 	public String getConfigDir() {
 	    String base = System.getProperty("BASE_DIR", "/opt/myapp");
 	    // 英数字と / _ - のみ許可
@@ -1011,23 +1020,25 @@ Rule ID:ENV00-J: 環境変数やシステムプロパティを信用せず、検
 	    }
 	    return base + "/config";
 	}
-o	環境変数やシステムプロパティを取得したら、必ず正規表現で形式をチェックし、想定外であれば拒否します。
+
+*	環境変数やシステムプロパティを取得したら、必ず正規表現で形式をチェックし、想定外であれば拒否します。
  
 
-📘 第49章：雑則（MSC）
+## 📘 第49章：雑則（MSC）
 概要
 それまでの章に該当しない汎用的な注意点をまとめた章です。例として、ログ出力の形式統一、不変コレクションの利用、リソースバンドルの管理などがあります。(JP-CERT)
 
-Rule ID:MSC00-J: ログには必ずログレベルを設定し、構造化ログを心掛ける
+## Rule ID:MSC00-J: ログには必ずログレベルを設定し、構造化ログを心掛ける
 •	解説
 ログ出力を行う際は、info, warn, error など適切なログレベルを指定し、一貫したフォーマット（例：JSON 形式）で出力すると、ログ解析や監査時に有効です。特にセキュリティログは「誰が・いつ・何をしたか」が明確にわかるように構造化しましょう。
-•	❌ 悪い例
+
+### •	❌ 悪い例
 	public void loginUser(String userId) {
 	    // ログレベルを明示していないと、何が重要か判別できない
 	    System.out.println("User logged in: " + userId);
 	}
 
-•	✅ 良い例
+### •	✅ 良い例
 	import org.slf4j.Logger;
 	import org.slf4j.LoggerFactory;
 	import java.time.Instant;
@@ -1045,10 +1056,11 @@ Rule ID:MSC00-J: ログには必ずログレベルを設定し、構造化ログ
 	        logger.info(jsonLog);
 	    }
 	}
-o	JSON 形式など構造化ログにすることで、SIEM やログ解析ツールと連携しやすくなります。
+
+*	JSON 形式など構造化ログにすることで、SIEM やログ解析ツールと連携しやすくなります。
  
 
-📝 まとめ
+# 📝 まとめ
 •	本ガイドは、JPCERT/CC の「Java コーディアリングスタンダード CERT/Oracle 版」に基づき、各章ごとにルール ID・タイトル、解説、悪い例、良い例をまとめたものです。
 •	実際のプロジェクトでは、以下のポイントを参考にしつつ、チームのコーディング規約に落とし込み、CI／静的解析ツール（FindBugs/SpotBugs, PMD, SonarQube など）と組み合わせて自動チェックを行うとより効果的です。
 1.	入力値検証（IDS）：すべての外部入力を検証・正規化・無害化する。
